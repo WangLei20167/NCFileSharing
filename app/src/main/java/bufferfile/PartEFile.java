@@ -182,6 +182,32 @@ class PartEFile {
     }
 
     /**
+     * 检查对方的文件是否对自己有用
+     */
+    public boolean isUseful(int[][] itsCoef){
+        //
+        int oldRank=coefMatrix.length;
+        int Row= coefMatrix.length+itsCoef.length;
+        byte[][] testCoef=new byte[Row][k];
+        for (int i = 0; i < Row; i++) {
+            if(i<coefMatrix.length){
+                for (int j = 0; j < k; j++) {
+                    testCoef[i][j]=(byte)coefMatrix[i][j];
+                }
+            }else {
+                for (int j = 0; j < k; j++) {
+                    testCoef[i][j]=(byte)itsCoef[i][j];
+                }
+            }
+        }
+        int newRank=NCUtils.getRank(testCoef);
+        if(newRank>oldRank){
+            return true;
+        }else {
+            return false;
+        }
+    }
+    /**
      * 添加文件
      * 更改了文件信息，需要互斥操作
      * @param fileName
@@ -217,7 +243,7 @@ class PartEFile {
                 testCoef[i][j] = (byte) coefMatrix[i][j];
             }
         }
-        int newRank = NCUtils.rank(testCoef, Row, k);
+        int newRank = NCUtils.getRank(testCoef);
         if (newRank > oldRank) {
             //执行添加
             String filePath = pieceFilePath + "/" + fileName;

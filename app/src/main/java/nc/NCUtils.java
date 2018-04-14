@@ -82,7 +82,9 @@ public class NCUtils {
     }
 
 
-    public static int rank(byte[][] matrix, int row, int col) {
+    public static int getRank(byte[][] matrix) {
+        int row = matrix.length;
+        int col = matrix[0].length;
         byte[] mat = new byte[row * col];
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {

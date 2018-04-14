@@ -1,6 +1,5 @@
 package connect;
 
-import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
@@ -11,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import global.MsgValue;
 
@@ -42,6 +42,8 @@ public class TCPClient {
                     socket = new Socket(ip, port);
                     socket.setReuseAddress(true);
                     socket.setTcpNoDelay(true);
+                    //设置读超时  10S
+                    socket.setSoTimeout(10 * 1000);
                     dis = new DataInputStream(socket.getInputStream());
                     dos = new DataOutputStream(socket.getOutputStream());
                 } catch (IOException e) {
@@ -83,10 +85,16 @@ public class TCPClient {
                         dis.readFully(data);
                     } else {
                         String msg = dis.readUTF();
-                        sendMessage(MsgValue.SHOW_MSG,0,0,msg);
+                        sendMessage(MsgValue.SHOW_MSG, 0, 0, msg);
                     }
+                } catch (SocketTimeoutException s) {
+                    //读超时异常发生时，socket.isClosed()==true
+                    //socket没有因为读超时而关闭
+                    Log.i("hanhai", "Socket读超时");
+                    break;
                 } catch (IOException e) {
                     e.printStackTrace();
+                    break;
                 }
             }
         }

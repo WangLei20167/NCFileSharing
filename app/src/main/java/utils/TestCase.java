@@ -5,6 +5,8 @@ package utils;
  */
 
 public class TestCase {
+    public enum Msg {TEST1, TEST2}
+
     public int test(int a, int b) {
         return a + b;
     }

@@ -1,7 +1,6 @@
 package com.example.mroot.ncfilesharing;
 
 import android.app.Activity;
-import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -25,8 +24,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import bufferfile.EncodeFile;
-import bufferfile.SolveSocketMsg;
+import bufferfile.SolveEFileChange;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -75,22 +73,14 @@ public class MainActivity extends AppCompatActivity {
         //apHelper.openAP();
         //tcpClient.sendFile(new File("/storage/emulated/0/1NCSharing/Log/sendLog.txt"));
 
-        EncodeFile encodeFile = EncodeFile.getInstance();
-        //encodeFile.init("/storage/emulated/0/1NCSharing/Log/testBytes.txt", 4);
-        encodeFile.init(Constant.DATA_TEMP_PATH + "/" + "testBytes" + "/testBytes.txt.txt");
-        String fileName = encodeFile.getFileName();
+        SolveEFileChange solveEFileChange = SolveEFileChange.getInstance();
+        solveEFileChange.initFile("/storage/emulated/0/1NCSharing/Log/sendLog.txt", 4);
+
     }
 
     public void onTest1(View view) {
-        String str = "ABCDEFGH";
-        //FileUtil.write("/storage/emulated/0/1NCSharing/Never Say Never.mp4", str.getBytes());
 
-        //Log.i(Constant.TEST_FLAG, Constant.DATA_FOLDER_PATH);
-        EncodeFile encodeFile = EncodeFile.getInstance();
-        //encodeFile.init("/storage/emulated/0/1NCSharing/Log/testBytes.txt", 4);
-        encodeFile.init("/storage/emulated/0/1NCSharing/Never Say Never.mp4", 6);
-        //encodeFile.init("/storage/emulated/0/1NCSharing/Log/sendLog.txt", 4);
-        encodeFile.recoverFile();
+
     }
 
     @OnClick(R.id.btn_openServer)
@@ -151,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
 
                 case MsgValue.SOCKET_MSG:
-                    SolveSocketMsg solveSocketMsg = SolveSocketMsg.getInstance();
+                    SolveEFileChange solveSocketMsg = SolveEFileChange.getInstance();
                     solveSocketMsg.dealMsgEvent((SocketMessage) msg.obj);
                     break;
 

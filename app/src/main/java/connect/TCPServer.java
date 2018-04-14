@@ -13,10 +13,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import bufferfile.SolveSocketMsg;
-import global.Constant;
 import global.MsgValue;
-import utils.FileUtil;
 
 import static com.example.mroot.ncfilesharing.MainActivity.handler;
 

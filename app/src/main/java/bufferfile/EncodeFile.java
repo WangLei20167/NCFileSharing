@@ -5,7 +5,6 @@ import android.util.Log;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import com.thoughtworks.xstream.converters.reflection.FieldDictionary;
 import com.thoughtworks.xstream.converters.reflection.SortableFieldKeySorter;
 import com.thoughtworks.xstream.converters.reflection.Sun14ReflectionProvider;
@@ -27,7 +26,7 @@ import utils.FileUtil;
  * Created by mroot on 2018/4/11.
  */
 @XStreamAlias("EncodeFile")
-public class EncodeFile {
+class EncodeFile {
     //主属性
     @XStreamAsAttribute
     private String fileName;
@@ -46,23 +45,9 @@ public class EncodeFile {
     @XStreamAlias("partFileInfor")
     private List<PartEFile> partEFileList = new ArrayList<>();
 
-    //忽略以下字段
-    @XStreamOmitField
-    private static EncodeFile encodeFile = new EncodeFile();
-
-    //使用类的两阶段构造
-    private EncodeFile() {
-
-    }
-
-    public static EncodeFile getInstance() {
-        return encodeFile;
-    }
 
     //对文件进行分片操作
     public void init(String filePath, int k) {
-        int num=0;
-
         this.k = k;
         File file = new File(filePath);
         this.fileName = file.getName();
@@ -110,12 +95,6 @@ public class EncodeFile {
         object2xml();
     }
 
-    //从xml文件恢复encodeFile变量
-    public void init(String xmlFilePath) {
-        byte[] xml = FileUtil.read(xmlFilePath);
-        String strXml = new String(xml);
-        xml2obj(strXml);
-    }
 
     //恢复文件
     public void recoverFile() {
@@ -163,16 +142,26 @@ public class EncodeFile {
             //添加文件成功
             synchronized (this) {
                 currentSmallPiece += 1;
-
                 //这里应该吧修改写入xml文件
+                object2xml();
                 recoverFile();
             }
         }
-
-        //释放内存
-        System.gc();
     }
 
+    //查看是否有对自己有用的数据
+    //如果有，返回PartEFile.no值
+    public byte[] checkUsefulParts(EncodeFile itsEncodeFile) {
+        for (PartEFile partEFile : itsEncodeFile.partEFileList) {
+            int itsNo = partEFile.getNo();
+            for (PartEFile eFile : partEFileList) {
+                if(eFile.getNo()==itsNo){
+                    //在PartEFile中检查秩
+
+                }
+            }
+        }
+    }
 
     //object转化为xml字符串
     public String object2xml() {
@@ -187,8 +176,7 @@ public class EncodeFile {
                         "partNum",
                         "currentSmallPiece",
                         "totalSmallPiece",
-                        "partEFileList",
-                        "encodeFile"
+                        "partEFileList"
                 });
         sorter.registerFieldOrder(PartEFile.class,
                 new String[]{
@@ -216,14 +204,14 @@ public class EncodeFile {
     }
 
     //xml转object
-    public EncodeFile xml2obj(String xml) {
+    public static EncodeFile xml2obj(String xml) {
         XStream xStream = new XStream(new DomDriver("UTF-8"));
         //使用注解
         xStream.processAnnotations(EncodeFile.class);
         xStream.processAnnotations(PartEFile.class);
         //这个blog标识一定要和Xml中的保持一直，否则会报错
         xStream.alias("EncodeFile", EncodeFile.class);
-        encodeFile = (EncodeFile) xStream.fromXML(xml);
+        EncodeFile encodeFile = (EncodeFile) xStream.fromXML(xml);
         int nK = encodeFile.k;
         String encodeFilePath0 = encodeFile.encodeFilePath;
         //恢复被忽略的成员变量值
@@ -238,7 +226,4 @@ public class EncodeFile {
         return encodeFile;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
 }

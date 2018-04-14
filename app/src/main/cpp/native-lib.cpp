@@ -340,7 +340,7 @@ Java_nc_NCUtils_GetRank(JNIEnv *env, jobject instance, jbyteArray matrix, jint n
     }
 
     int nRank = 0;
-    // Get the rank.
+    // Get the getRank.
     for (int i = 0; i < nRow; i++) {
         int nNonzero = 0;
         for (int j = 0; j < nCol; j++) {
