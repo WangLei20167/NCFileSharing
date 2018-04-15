@@ -5,6 +5,7 @@ import android.util.Log;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import com.thoughtworks.xstream.converters.reflection.FieldDictionary;
 import com.thoughtworks.xstream.converters.reflection.SortableFieldKeySorter;
 import com.thoughtworks.xstream.converters.reflection.Sun14ReflectionProvider;
@@ -19,6 +20,8 @@ import java.util.List;
 
 import global.Constant;
 import utils.FileUtil;
+import utils.IntAndBytes;
+import utils.LocalUtil;
 
 
 /**
@@ -34,8 +37,8 @@ class EncodeFile {
 
     @XStreamAlias("GenerationSize")
     private int k = 4;
-    //存储目录
-    private String encodeFilePath;
+
+    private String folderName;
 
     private int partNum = 0; //切分成的部分数
 
@@ -45,6 +48,9 @@ class EncodeFile {
     @XStreamAlias("partFileInfor")
     private List<PartEFile> partEFileList = new ArrayList<>();
 
+    //存储目录
+    @XStreamOmitField
+    private String encodeFilePath;
 
     //对文件进行分片操作
     public void init(String filePath, int k) {
@@ -52,7 +58,7 @@ class EncodeFile {
         File file = new File(filePath);
         this.fileName = file.getName();
         this.fileLen = (int) file.length();
-        String folderName = fileName.substring(0, fileName.indexOf("."));
+        this.folderName = fileName.substring(0, fileName.indexOf(".")) + LocalUtil.getRandomString(5);
         this.encodeFilePath = Constant.DATA_TEMP_PATH + "/" + folderName;
         FileUtil.createFolder(encodeFilePath);
         BufferedInputStream bis = null;
@@ -152,15 +158,27 @@ class EncodeFile {
     //查看是否有对自己有用的数据
     //如果有，返回PartEFile.no值
     public byte[] checkUsefulParts(EncodeFile itsEncodeFile) {
+        byte[] bt_nos = new byte[0];
         for (PartEFile partEFile : itsEncodeFile.partEFileList) {
             int itsNo = partEFile.getNo();
+            //标志本地是否有此部分文件数据
+            boolean haveThisNo = false;
             for (PartEFile eFile : partEFileList) {
-                if(eFile.getNo()==itsNo){
+                int no = eFile.getNo();
+                if (no == itsNo) {
                     //在PartEFile中检查秩
-
+                    if (eFile.isUseful(partEFile.getCoefMatrix())) {
+                        IntAndBytes.byteArrayGrow(bt_nos, (byte) no);
+                    }
+                    haveThisNo = true;
+                    break;
                 }
             }
+            if (!haveThisNo) {
+                IntAndBytes.byteArrayGrow(bt_nos, (byte) itsNo);
+            }
         }
+        return bt_nos;
     }
 
     //object转化为xml字符串
@@ -172,11 +190,12 @@ class EncodeFile {
                         "fileName",
                         "fileLen",
                         "k",
-                        "encodeFilePath",
+                        "folderName",
                         "partNum",
                         "currentSmallPiece",
                         "totalSmallPiece",
-                        "partEFileList"
+                        "partEFileList",
+                        "encodeFilePath",
                 });
         sorter.registerFieldOrder(PartEFile.class,
                 new String[]{
@@ -184,6 +203,7 @@ class EncodeFile {
                         "rightFileLen",
                         "_endwith0_num",
                         "coefMatrix",
+                        "sendBFileName",
                         "k",
                         "partFilePath",
                         "pieceFilePath",
@@ -199,12 +219,13 @@ class EncodeFile {
         String xml = xStream.toXML(this);
         Log.i(Constant.TEST_FLAG, xml);
         //写入配置文件
-        FileUtil.write(encodeFilePath + "/" + fileName + ".txt", xml.getBytes());
+        FileUtil.write(encodeFilePath + "/xml.txt", xml.getBytes());
         return xml;
     }
 
     //xml转object
-    public static EncodeFile xml2obj(String xml) {
+    public static EncodeFile xml2obj(byte[] bt_xml) {
+        String xml = new String(bt_xml);
         XStream xStream = new XStream(new DomDriver("UTF-8"));
         //使用注解
         xStream.processAnnotations(EncodeFile.class);
@@ -212,6 +233,8 @@ class EncodeFile {
         //这个blog标识一定要和Xml中的保持一直，否则会报错
         xStream.alias("EncodeFile", EncodeFile.class);
         EncodeFile encodeFile = (EncodeFile) xStream.fromXML(xml);
+        //恢复存储路径
+        encodeFile.encodeFilePath = Constant.DATA_TEMP_PATH + "/" + encodeFile.folderName;
         int nK = encodeFile.k;
         String encodeFilePath0 = encodeFile.encodeFilePath;
         //恢复被忽略的成员变量值
@@ -226,4 +249,40 @@ class EncodeFile {
         return encodeFile;
     }
 
+    //重载一个
+    public static EncodeFile xml2obj(String xmlFilePath) {
+        byte[] bt_xml = FileUtil.read(xmlFilePath);
+        return xml2obj(bt_xml);
+    }
+
+    //clone对象
+    //接收到本地没有任何编码数据的文件时，需要建立控制变量encodeFile
+    public static EncodeFile clone(EncodeFile itsEncodeFile) {
+        EncodeFile newEncodeFile = new EncodeFile();
+        newEncodeFile.fileName = itsEncodeFile.fileName;
+        newEncodeFile.fileLen = itsEncodeFile.fileLen;
+        newEncodeFile.k = itsEncodeFile.k;
+        newEncodeFile.folderName = itsEncodeFile.folderName;
+        newEncodeFile.partNum = itsEncodeFile.partNum;
+        newEncodeFile.totalSmallPiece = itsEncodeFile.totalSmallPiece;
+
+        newEncodeFile.encodeFilePath = Constant.DATA_TEMP_PATH + "/" + newEncodeFile.folderName;
+        //新建存储文件夹
+        FileUtil.createFolder(newEncodeFile.encodeFilePath);
+        //xml文件
+        newEncodeFile.object2xml();
+        return newEncodeFile;
+    }
+
+    public String getEncodeFilePath() {
+        return encodeFilePath;
+    }
+
+    public String getFolderName() {
+        return folderName;
+    }
+
+    public List<PartEFile> getPartEFileList() {
+        return partEFileList;
+    }
 }

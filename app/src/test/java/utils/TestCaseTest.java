@@ -1,6 +1,11 @@
 package utils;
 
+import android.util.Log;
+
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by mroot on 2018/4/7.
@@ -15,20 +20,23 @@ public class TestCaseTest {
         System.out.println(TestCase.Msg.TEST1.ordinal());
         System.out.println(TestCase.Msg.TEST2.ordinal());
 
-        int a = 3;
-        String strTest=null;
-        switch (a) {
-            case 0:
-                break;
-            default:
-                strTest = "this is a switch test!";
-            case 1:
-                strTest = "test!";
-                break;
-            case 3:
-                break;
+        List<String> strings=new ArrayList<>();
+        strings.add("string1");
+        strings.add("string2");
+        strings.add("string3");
+        strings.add("string4");
+        strings.add("string5");
+        for (final String string : strings) {
+            System.out.println(string);
         }
-        System.out.println(strTest);
+
+        //打印
+//        string1
+//        string2
+//        string3
+//        string4
+//        string5
+
     }
 }
 

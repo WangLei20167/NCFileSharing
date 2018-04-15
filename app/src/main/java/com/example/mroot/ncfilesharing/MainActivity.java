@@ -29,6 +29,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import connect.SocketMessage;
+import connect.SocketSendData;
 import connect.TCPClient;
 import connect.TCPServer;
 import global.Constant;
@@ -44,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.tv)
     TextView tv;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,9 +145,9 @@ public class MainActivity extends AppCompatActivity {
                     solveSocketMsg.dealMsgEvent((SocketMessage) msg.obj);
                     break;
 
+                //处理发送
                 case MsgValue.SOLVE_RESPONSE:
-                    TCPServer tcpServer = TCPServer.getInstance();
-                    tcpServer.sendCode(((SocketMessage) msg.obj).getSocket(), 1);
+                    SocketSendData.checkRespond((SocketMessage)msg.obj);
                     break;
                 default:
                     break;
@@ -181,6 +181,12 @@ public class MainActivity extends AppCompatActivity {
         return context;
     }
 
+    //全局发送message到handle处理的方法
+    public static void sendMsg2UIThread(int what, Object obj) {
+        if (handler != null) {
+            Message.obtain(handler, what, obj).sendToTarget();
+        }
+    }
 
     /**
      * 适配android6.0以上权限                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         =

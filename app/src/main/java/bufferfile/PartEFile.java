@@ -1,5 +1,7 @@
 package bufferfile;
 
+import android.util.Log;
+
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
@@ -35,6 +37,9 @@ class PartEFile {
     //存储系数矩阵
     //如果存储byte[]，在转化为字符串时，显示的是字符
     private int[][] coefMatrix = new int[0][0];
+
+    //待发送文件的名字
+    private String sendBFileName;
 
     @XStreamOmitField
     private int k;
@@ -111,10 +116,15 @@ class PartEFile {
      * 对文件进行再编码
      */
     public void reencode() {
+        sendBFileName = "";
         List<File> fileList = FileUtil.getFileList(pieceFilePath);
         int fileNum = fileList.size();
         //当有0个文件或1个文件时，不用进行再编码
-        if (fileNum == 0 || fileNum == 1) {
+        if (fileNum == 0) {
+            return;
+        }
+        if (fileNum == 1) {
+            sendBFileName = fileList.get(0).getName();
             return;
         }
         //从文件读取数据到数组
@@ -131,11 +141,12 @@ class PartEFile {
         }
         //再编码
         byte[] reencodeData = NCUtils.reencode(fileData, fileNum, rightFileLen);
-        String reencodeFilePath = sendBufferPath + "/" + getTimeAsFileName();
+        String fileNameTemp = getTimeAsFileName();
+        String reencodeFilePath = sendBufferPath + "/" + fileNameTemp;
         //写入文件
         FileUtil.write(reencodeFilePath, reencodeData);
 
-
+        sendBFileName = fileNameTemp;
         //通知gc回收内存
         System.gc();
     }
@@ -184,32 +195,31 @@ class PartEFile {
     /**
      * 检查对方的文件是否对自己有用
      */
-    public boolean isUseful(int[][] itsCoef){
+    public boolean isUseful(int[][] itsCoef) {
         //
-        int oldRank=coefMatrix.length;
-        int Row= coefMatrix.length+itsCoef.length;
-        byte[][] testCoef=new byte[Row][k];
+        int oldRank = coefMatrix.length;
+        int Row = coefMatrix.length + itsCoef.length;
+        byte[][] testCoef = new byte[Row][k];
         for (int i = 0; i < Row; i++) {
-            if(i<coefMatrix.length){
+            if (i < coefMatrix.length) {
                 for (int j = 0; j < k; j++) {
-                    testCoef[i][j]=(byte)coefMatrix[i][j];
+                    testCoef[i][j] = (byte) coefMatrix[i][j];
                 }
-            }else {
+            } else {
                 for (int j = 0; j < k; j++) {
-                    testCoef[i][j]=(byte)itsCoef[i][j];
+                    testCoef[i][j] = (byte) itsCoef[i][j];
                 }
             }
         }
-        int newRank=NCUtils.getRank(testCoef);
-        if(newRank>oldRank){
-            return true;
-        }else {
-            return false;
-        }
+        //检查秩   秩序增加则说明数据有用
+        int newRank = NCUtils.getRank(testCoef);
+        return newRank > oldRank;
     }
+
     /**
      * 添加文件
      * 更改了文件信息，需要互斥操作
+     *
      * @param fileName
      * @param fileData
      * @return
@@ -275,10 +285,48 @@ class PartEFile {
         return ncFileName;
     }
 
+    /**
+     * 获取到发送缓存文件夹中的文件
+     *
+     * @return
+     */
+    public synchronized String getSendBuffer() {
+        if (sendBFileName.equals("") || sendBFileName == null) {
+            //说明正在编码
+            if (sendBFileName.equals("")) {
+                Log.i("hanhai", "进入到等待再编码循环");
+                long start = System.currentTimeMillis();
+                while (sendBFileName.equals("")) {
+                    //等待再编码
+                    try {
+                        Thread.sleep(10);
+                        long end = System.currentTimeMillis();
+                        if ((end - start) > 10 * 1000) {
+                            return null;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                reencode();
+            }
+        }
+        final String sendFilePath = sendBufferPath + "/" + sendBFileName;
+        //在重新执行再编码生成
+        sendBFileName = "";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                reencode();
+            }
+        }).start();
+
+        return sendFilePath;
+    }
 
     /**
      * get and set
-     *
      */
     public int getNo() {
         return no;
@@ -298,5 +346,9 @@ class PartEFile {
 
     public void setSendBufferPath(String sendBufferPath) {
         this.sendBufferPath = sendBufferPath;
+    }
+
+    public int[][] getCoefMatrix() {
+        return coefMatrix;
     }
 }

@@ -24,4 +24,18 @@ public class IntAndBytes {
         }
         return result;
     }
+
+    /**
+     * 给byte数组增加一个长度，并赋值
+     * @param originArray
+     * @param value
+     * @return
+     */
+    public static byte[] byteArrayGrow(byte[] originArray, byte value) {
+        int col = originArray.length;
+        byte[] newArray = new byte[col + 1];
+        System.arraycopy(originArray, 0, newArray, 0, col);
+        newArray[col]=value;
+        return newArray;
+    }
 }

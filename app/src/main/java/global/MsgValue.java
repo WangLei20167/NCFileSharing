@@ -10,4 +10,6 @@ public class MsgValue {
     public static final int SOCKET_MSG = 880;
 
     public static final int SOLVE_RESPONSE = 974;
+
+    public static final int CLIENT_CONNECT = 302;
 }

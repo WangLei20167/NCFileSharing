@@ -32,7 +32,7 @@ public class NCUtils {
     public static byte[] reencode(byte[] encodeData, int row, int col) {
         //1*row 随机矩阵  与  row * col的数据矩阵相乘
         byte[] randomMatrix = new byte[row];
-        Random random = new Random(System.currentTimeMillis());
+        Random random = new Random();
         random.nextBytes(randomMatrix);
         //为了避免矩阵的来回复制，
         //再编码没有取出首字节K值，

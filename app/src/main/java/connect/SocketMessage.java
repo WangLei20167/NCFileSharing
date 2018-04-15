@@ -8,18 +8,6 @@ import java.net.Socket;
 
 public class SocketMessage {
 
-
-    private boolean isFile;
-
-    //约定好的信息类型值
-    //1 表示是XML文件
-    //2 表示是编码文件
-    //3 表示是文件请求
-    //4 表示已经不再需要信息（可以断开了）
-    public static final int TYPE_XML = 296;
-    public static final int TYPE_EFILE = 781;
-    public static final int TYPE_REQUEST = 493;
-
     private int msgType;
 
     //文件名称
@@ -33,9 +21,10 @@ public class SocketMessage {
     //请求的no编号数组
     private byte[] bt_nos;
 
+        //SolveEFileChange处理完message，返回信息时使用
+    private String filePath;
 
     public void clearExceptSocket() {
-        isFile = false;
         msgType = 0;
         fileName = null;
         fileData = null;
@@ -80,19 +69,19 @@ public class SocketMessage {
         this.socket = socket;
     }
 
-    public boolean isFile() {
-        return isFile;
-    }
-
-    public void setFile(boolean file) {
-        isFile = file;
-    }
-
     public byte[] getBt_nos() {
         return bt_nos;
     }
 
     public void setBt_nos(byte[] bt_nos) {
         this.bt_nos = bt_nos;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 }
